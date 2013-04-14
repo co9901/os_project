@@ -145,13 +145,14 @@ void
 thread_wake (void)
 {
   struct list_elem *e;
-  struct thread* t;
+  struct list_elem *next;
+  struct sleep_queue *sq;
 
-  for (e = list_begin (&sleep_list); e != list_end (&sleep_list); e = list_next (e)) {
-    t = list_entry(e, struct thread, elem);
-    if (t -> wake_tick <= timer_ticks()) {
-      thread_unblock(t);
-      list_remove(e);
+  for (e = list_begin (&sleep_list); e != list_end (&sleep_list); e = list_next(e)) {
+    sq = list_entry(e, struct sleep_queue, elem);
+    if (sq -> ticks <= timer_ticks()) {
+      list_remove(&sq -> elem);
+      thread_unblock(sq -> thread);
     }
   }
 }
@@ -339,18 +340,20 @@ thread_yield (void)
 }
 
 void
-thread_sleep (int64_t start, int64_t ticks)
+thread_sleep (int64_t ticks)
 {
   struct thread *cur = thread_current ();
+  struct sleep_queue *sq;
   enum intr_level old_level;
   
   ASSERT (!intr_context ());
-
   old_level = intr_disable ();
-  cur->wake_tick = start + ticks; 
-  list_push_back (&sleep_list, &cur->elem);
-  cur->status = THREAD_BLOCKED;
-  schedule ();
+  sq = &cur -> sleep_queue;
+  sq -> thread = cur;
+  sq -> ticks = ticks + timer_ticks();
+  list_push_back (&sleep_list, &sq->elem);
+
+  thread_block();
   intr_set_level (old_level);
 }
 

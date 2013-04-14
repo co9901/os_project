@@ -80,10 +80,15 @@ typedef int tid_t;
    only because they are mutually exclusive: only a thread in the
    ready state is on the run queue, whereas only a thread in the
    blocked state is on a semaphore wait list. */
+struct sleep_queue 
+{
+  int64_t ticks;
+  struct thread *thread;
+  struct list_elem elem;
+};
 struct thread
   {
     /* Owned by thread.c. */
-    int64_t wake_tick;
     tid_t tid;                          /* Thread identifier. */
     enum thread_status status;          /* Thread state. */
     char name[16];                      /* Name (for debugging purposes). */
@@ -93,6 +98,7 @@ struct thread
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
+    struct sleep_queue sleep_queue;
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
@@ -127,6 +133,7 @@ const char *thread_name (void);
 
 void thread_exit (void) NO_RETURN;
 void thread_yield (void);
+void thread_sleep (int64_t ticks);
 
 /* Performs some operation on thread t, given auxiliary data AUX. */
 typedef void thread_action_func (struct thread *t, void *aux);
