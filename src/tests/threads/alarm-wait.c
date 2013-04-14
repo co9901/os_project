@@ -129,9 +129,10 @@ test_sleep (int thread_cnt, int iterations)
             i, threads[i].iterations, iterations);
   
   lock_release (&test.output_lock);
-  thread_print_stats();
+
   free (output);
   free (threads);
+  thread_print_stats();
 }
 
 /* Sleeper thread. */

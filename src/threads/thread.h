@@ -83,6 +83,7 @@ typedef int tid_t;
 struct thread
   {
     /* Owned by thread.c. */
+    int64_t wake_tick;
     tid_t tid;                          /* Thread identifier. */
     enum thread_status status;          /* Thread state. */
     char name[16];                      /* Name (for debugging purposes). */
@@ -111,6 +112,7 @@ void thread_init (void);
 void thread_start (void);
 
 void thread_tick (void);
+void thread_wake (void);
 void thread_print_stats (void);
 
 typedef void thread_func (void *aux);

@@ -28,6 +28,8 @@ static struct list ready_list;
    when they are first scheduled and removed when they exit. */
 static struct list all_list;
 
+static struct list sleep_list;
+
 /* Idle thread. */
 static struct thread *idle_thread;
 
@@ -92,6 +94,7 @@ thread_init (void)
   lock_init (&tid_lock);
   list_init (&ready_list);
   list_init (&all_list);
+  list_init (&sleep_list);
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
@@ -138,7 +141,20 @@ thread_tick (void)
   if (++thread_ticks >= TIME_SLICE)
     intr_yield_on_return ();
 }
+void
+thread_wake (void)
+{
+  struct list_elem *e;
+  struct thread* t;
 
+  for (e = list_begin (&sleep_list); e != list_end (&sleep_list); e = list_next (e)) {
+    t = list_entry(e, struct thread, elem);
+    if (t -> wake_tick <= timer_ticks()) {
+      thread_unblock(t);
+      list_remove(e);
+    }
+  }
+}
 /* Prints thread statistics. */
 void
 thread_print_stats (void) 
@@ -318,6 +334,22 @@ thread_yield (void)
   if (cur != idle_thread) 
     list_push_back (&ready_list, &cur->elem);
   cur->status = THREAD_READY;
+  schedule ();
+  intr_set_level (old_level);
+}
+
+void
+thread_sleep (int64_t start, int64_t ticks)
+{
+  struct thread *cur = thread_current ();
+  enum intr_level old_level;
+  
+  ASSERT (!intr_context ());
+
+  old_level = intr_disable ();
+  cur->wake_tick = start + ticks; 
+  list_push_back (&sleep_list, &cur->elem);
+  cur->status = THREAD_BLOCKED;
   schedule ();
   intr_set_level (old_level);
 }
