@@ -21,6 +21,33 @@
    of thread.h for details. */
 #define THREAD_MAGIC 0xcd6abf4b
 
+/*my implementation*/
+// (2 * 3 * 5 * 7)^3
+#define WEIGHT_CRITERIA 9261000
+/*
+static int weight_list[64] = 
+{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 
+12, 14, 15, 18, 20, 21, 24, 25, 27, 28, 
+30, 35, 36, 40, 42, 45, 49, 50, 54, 56, 
+60, 63, 70, 72, 75, 84, 90, 98, 100, 105, 
+108, 120, 125, 126, 135, 140, 147, 150, 168, 175, 
+180, 189, 196, 200, 210, 216, 225, 245, 250, 252, 
+270, 280, 294, 300};
+*/
+static int inv_weight_list[64] = 
+{ 9261000, 4630500, 3087000, 2315250, 1852200, 1543500, 1323000, 1157625, 1029000, 926100,
+771750, 661500, 617400, 514500, 463050, 441000, 385875, 370440, 343000, 330750, 
+308700, 264600, 257250, 231525, 220500, 205800, 189000, 185220, 171500, 165375, 
+154350, 147000, 132300, 128625, 123480, 110250, 102900, 94500, 92610, 88200, 
+85750, 77175, 74088, 73500, 68600, 66150, 63000, 61740, 55125, 52920, 
+51450, 49000, 47250, 46305, 44100, 42875, 41160, 37800, 37044, 36750, 
+34300, 33075, 31500, 30870};
+
+
+/*end*/
+
+
+
 /* List of processes in THREAD_READY state, that is, processes
    that are ready to run but not actually running. */
 static struct list ready_list;
@@ -73,6 +100,10 @@ static void *alloc_frame (struct thread *, size_t size);
 static void schedule (void);
 void schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
+
+/*my implementation*/
+static bool thread_priority_less(const struct list_elem *e1, const struct list_elem *e2, void *aux);
+/*end*/
 
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This cAn't work in
@@ -264,7 +295,7 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  list_push_back (&ready_list, &t->elem);
+  list_insert_ordered (&ready_list, &t->elem, thread_priority_less, NULL);
   t->status = THREAD_READY;
   intr_set_level (old_level);
 }
@@ -335,7 +366,7 @@ thread_yield (void)
 
   old_level = intr_disable ();
   if (cur != idle_thread) 
-    list_push_back (&ready_list, &cur->elem);
+    list_insert_ordered (&ready_list, &cur->elem, thread_priority_less, NULL);
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
@@ -503,6 +534,10 @@ init_thread (struct thread *t, const char *name, int priority)
   strlcpy (t->name, name, sizeof t->name);
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
+/*my implementation*/
+	t->inv_weight = inv_weight_list[priority];
+	t->virtual_time = inv_weight_list[priority];
+/*end*/
   t->magic = THREAD_MAGIC;
   list_push_back (&all_list, &t->allelem);
 }
@@ -620,3 +655,29 @@ allocate_tid (void)
 /* Offset of 'stack' member within 'struct thread.
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
+
+//my implementation
+//compare function implementation
+static bool
+thread_priority_less (const struct list_elem *e1, const struct list_elem *e2, void *aux UNUSED)
+{
+	struct thread *t1, *t2;
+	
+	ASSERT(e1 != NULL && e2 != NULL);
+
+	t1 = list_entry(e1, struct thread, elem);
+	t2 = list_entry(e2, struct thread, elem);
+
+	if(t1->virtual_time < t2->virtual_time)
+		return true;
+	else if(t1->virtual_time > t2->virtual_time)
+		return false;
+	else{ // ==
+		if(t1->priority >= t2->priority)
+			return true;
+		else
+			return false;
+	}
+}
+
+//end
