@@ -563,10 +563,15 @@ alloc_frame (struct thread *t, size_t size)
 static struct thread *
 next_thread_to_run (void) 
 {
+	struct thread *t;
+
   if (list_empty (&ready_list))
     return idle_thread;
-  else
-    return list_entry (list_pop_front (&ready_list), struct thread, elem);
+  else{
+    t = list_entry (list_pop_front (&ready_list), struct thread, elem);
+		t->virtual_time += t->inv_weight;
+		return t;
+	}
 }
 
 /* Completes a thread switch by activating the new thread's page
@@ -633,9 +638,10 @@ schedule (void)
   ASSERT (cur->status != THREAD_RUNNING);
   ASSERT (is_thread (next));
 
-  if (cur != next)
-    prev = switch_threads (cur, next);
-  schedule_tail (prev); 
+
+	if (cur != next)
+		prev = switch_threads (cur, next);
+  schedule_tail (prev);
 }
 
 /* Returns a tid to use for a new thread. */
