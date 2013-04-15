@@ -130,6 +130,10 @@ const char *thread_name (void);
 void thread_exit (void) NO_RETURN;
 void thread_yield (void);
 
+//my implementation
+static bool thread_priority_less(const struct list_elem *e1, const struct list_elem *e2, void *aux);
+//end
+
 /* Performs some operation on thread t, given auxiliary data AUX. */
 typedef void thread_action_func (struct thread *t, void *aux);
 void thread_foreach (thread_action_func *, void *);
