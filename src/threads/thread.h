@@ -88,6 +88,10 @@ struct thread
     enum thread_status status;          /* Thread state. */
     char name[16];                      /* Name (for debugging purposes). */
     uint8_t *stack;                     /* Saved stack pointer. */
+    uint32_t time_array[200];  //minsik
+    int time_count;
+    int order_count;
+    int order_array[200]; //end
     int priority;                       /* Priority. */
 		uint32_t inv_weight;
 		uint32_t virtual_time;
