@@ -13,8 +13,15 @@ static void gogo(); //minsik
 static void test_sleep (int thread_cnt, int iterations);
 static int porder[50000][2]; //minsik
 static int porder_count=0; //minsik
+static int p2order[50000][2];
+static int time[50000][2];
+static int time_count=0;
+
+
+
+
 void
-test_my_alarm_single (void) 
+my_test_alarm_single (void) 
 {
   test_sleep (3, 1);
 }
@@ -22,7 +29,7 @@ test_my_alarm_single (void)
 void
 test_my_alarm_fairness (void) 
 {
-  test_sleep (20, 7);
+  test_sleep (10, 2);
 }
 
 /* Information about the test. */
@@ -95,13 +102,16 @@ test_sleep (int thread_cnt, int iterations)
     }
   
   /* Wait long enough for all the threads to finish. */
-  timer_sleep (100 + thread_cnt * iterations * 500 + 100); //적당히쉬는시간
+  timer_sleep (100 + thread_cnt * iterations * 200 + 100); //적당히쉬는시간
 
   /* Acquire the output lock in case some rogue thread is still
      running. */
+
 for(i=0;i<porder_count;i++)
 {
-	printf("%d %d\n",porder[i][0],porder[i][1]);//몇번째카운트,그때실행된 프라이어티 이름짓던 말던 맘대로하셈
+printf("%d %d\n",porder[i][0],porder[i][1]);
+//printf("%d %d\n",i,p2order[i][0]);
+//	printf("%d %d\n",time[i][0],time[i][1]);//몇번째카운트,그때실행된 프라이어티 이름짓던 말던 맘대로하셈
 	
 }  
 lock_acquire (&test.output_lock);
@@ -155,9 +165,15 @@ printf("end %d %d\n",thread_current()->priority,thread_current()->order_array[3]
 int i;
 for(i=0;i<tt->order_count;i++)
 {
+p2order[tt->order_array[i]][0] = tt->priority;
 porder[porder_count][0] = tt->order_array[i];
 porder[porder_count++][1] = tt->priority;
 }//옮김
+for(i=0;i<tt->time_count;i++)
+{
+time[time_count][0] = tt->time_array[i];
+time[time_count++][1] = tt->priority;
+}
 }
 /* Sleeper thread. */
 static void
