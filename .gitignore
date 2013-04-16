@@ -1,7 +1,7 @@
 src/threads/build/tests/threads/*.o
 src/threads/build/tests/threads/*.d
-src/threads/build/device/*.o
-src/threads/build/device/*.d
+src/threads/build/devices/*.o
+src/threads/build/devices/*.d
 src/threads/build/threads/*.o
 src/threads/build/*.dsk
 src/threads/build/kernel.o
