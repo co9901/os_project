@@ -1,5 +1,6 @@
-/* Checks that when the alarm clock wakes up threads, the
-   higher-priority threads run first. */
+/* Creates N threads, each of which sleeps a different, fixed
+   duration, M times.  Records the wake-up order and verifies
+   that it is valid. */
 
 #include <stdio.h>
 #include "tests/threads/tests.h"
@@ -8,51 +9,170 @@
 #include "threads/synch.h"
 #include "threads/thread.h"
 #include "devices/timer.h"
-
-static thread_func alarm_priority_thread;
-static int64_t wake_time;
-static struct semaphore wait_sema;
+static void gogo(); //minsik
+static void test_sleep (int thread_cnt, int iterations);
+static int porder[50000][2]; //minsik
+static int porder_count=0; //minsik
+void
+test_my_alarm_single (void) 
+{
+  test_sleep (3, 1);
+}
 
 void
 test_my_alarm_fairness (void) 
 {
+  test_sleep (20, 7);
+}
+
+/* Information about the test. */
+struct sleep_test 
+  {
+    int64_t start;              /* Current time at start of test. */
+    int iterations;             /* Number of iterations per thread. */
+
+    /* Output. */
+    struct lock output_lock;    /* Lock protecting output buffer. */
+    int *output_pos;            /* Current position in output buffer. */
+  };
+
+/* Information about an individual thread in the test. */
+struct sleep_thread 
+  {
+    struct sleep_test *test;     /* Info shared between all threads. */
+    int id;                     /* Sleeper ID. */
+    int duration;               /* Number of ticks to sleep. */
+    int iterations;             /* Iterations counted so far. */
+  };
+
+static void sleeper (void *);
+
+/* Runs THREAD_CNT threads thread sleep ITERATIONS times each. */
+static void
+test_sleep (int thread_cnt, int iterations) 
+{
+  struct sleep_test test;
+  struct sleep_thread *threads;
+  int *output, *op;
+  int product;
   int i;
-  
+
   /* This test does not work with the MLFQS. */
   ASSERT (!thread_mlfqs);
 
-  wake_time = timer_ticks () + 5 * TIMER_FREQ;
-  sema_init (&wait_sema, 0);
-  
-  for (i = 0; i < 10; i++) 
+  msg ("Creating %d threads to sleep %d times each.", thread_cnt, iterations);
+  msg ("Thread 0 sleeps 10 ticks each time,");
+  msg ("thread 1 sleeps 20 ticks each time, and so on.");
+  msg ("If successful, product of iteration count and");
+  msg ("sleep duration will appear in nondescending order.");
+
+  /* Allocate memory. */
+  threads = malloc (sizeof *threads * thread_cnt);
+  output = malloc (sizeof *output * iterations * thread_cnt * 2);
+  if (threads == NULL || output == NULL)
+    PANIC ("couldn't allocate memory for test");
+
+  /* Initialize test. */
+  test.start = timer_ticks () + 100;
+  test.iterations = iterations;
+  lock_init (&test.output_lock);
+  test.output_pos = output;
+
+  /* Start threads. */
+  ASSERT (output != NULL);
+  for (i = 0; i < thread_cnt; i++)
     {
-      int priority = PRI_DEFAULT - (i + 5) % 10 - 1;
+      struct sleep_thread *t = threads + i;
       char name[16];
-      snprintf (name, sizeof name, "priority %d", priority);
-      thread_create (name, priority, alarm_priority_thread, NULL);
+      
+      t->test = &test;
+      t->id = i;
+      t->duration = (i + 1) * 10;
+      t->iterations = 0;
+
+      snprintf (name, sizeof name, "thread %d", i);
+      thread_create (name, (PRI_MIN+i)%63, gogo, NULL);//프라이어리티알아서
     }
+  
+  /* Wait long enough for all the threads to finish. */
+  timer_sleep (100 + thread_cnt * iterations * 500 + 100); //적당히쉬는시간
 
-  thread_set_priority (PRI_MIN);
-
-  for (i = 0; i < 10; i++)
-    sema_down (&wait_sema);
-}
-
-static void
-alarm_priority_thread (void *aux UNUSED) 
+  /* Acquire the output lock in case some rogue thread is still
+     running. */
+for(i=0;i<porder_count;i++)
 {
-  /* Busy-wait until the current time changes. */
-  int64_t start_time = timer_ticks ();
-  while (timer_elapsed (start_time) == 0)
-    continue;
+	printf("%d %d\n",porder[i][0],porder[i][1]);//몇번째카운트,그때실행된 프라이어티 이름짓던 말던 맘대로하셈
+	
+}  
+lock_acquire (&test.output_lock);
 
-  /* Now we know we're at the very beginning of a timer tick, so
-     we can call timer_sleep() without worrying about races
-     between checking the time and a timer interrupt. */
-  timer_sleep (wake_time - timer_ticks ());
+  /* Print completion order. */
+/*  product = 0;
+  for (op = output; op < test.output_pos; op++) 
+    {
+      struct sleep_thread *t;
+      int new_prod;
 
-  /* Prints a message on wake-up. */
-  msg ("Thread %s woke up.", thread_name ());
+      ASSERT (*op >= 0 && *op < thread_cnt);
+      t = threads + *op;
 
-  sema_up (&wait_sema);
+      new_prod = ++t->iterations * t->duration;
+        
+      msg ("thread %d: duration=%d, iteration=%d, product=%d",
+           t->id, t->duration, t->iterations, new_prod);
+      
+      if (new_prod >= product)
+        product = new_prod;
+      else
+        fail ("thread %d woke up out of order (%d > %d)!",
+              t->id, product, new_prod);
+    }
+*/
+  /* Verify that we had the proper number of wakeups. */
+ /* for (i = 0; i < thread_cnt; i++)
+    if (threads[i].iterations != iterations)
+      fail ("thread %d woke up %d times instead of %d",
+            i, threads[i].iterations, iterations);
+  */
+  
+  lock_release (&test.output_lock);
+
+  free (output);
+  free (threads);
+  thread_print_stats();
+}
+static void gogo()
+{
+int t=0;
+//while(t<=210000000)
+while(t<=500000) //적당히 루프 끝내기위해서
+{
+t++;
+}
+struct thread *tt = thread_current();
+
+printf("end %d %d\n",thread_current()->priority,thread_current()->order_array[3]); //끝나는거알림
+int i;
+for(i=0;i<tt->order_count;i++)
+{
+porder[porder_count][0] = tt->order_array[i];
+porder[porder_count++][1] = tt->priority;
+}//옮김
+}
+/* Sleeper thread. */
+static void
+sleeper (void *t_) 
+{
+  struct sleep_thread *t = t_;
+  struct sleep_test *test = t->test;
+  int i;
+
+  for (i = 1; i <= test->iterations; i++) 
+    {
+      int64_t sleep_until = test->start + i * t->duration;
+      timer_sleep (sleep_until - timer_ticks ());
+      lock_acquire (&test->output_lock);
+      *test->output_pos++ = t->id;
+      lock_release (&test->output_lock);
+    }
 }
