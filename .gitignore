@@ -1,0 +1,3 @@
+src/threads/build/tests/threads/*.o
+src/threads/build/tests/threads/*.d
+src/threads/build/threads/*.o
