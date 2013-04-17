@@ -20,7 +20,7 @@
    Used to detect stack overflow.  See the big comment at the top
    of thread.h for details. */
 #define THREAD_MAGIC 0xcd6abf4b
-
+#define MAX_COUNT 50
 /*my implementation*/
 // (2 * 3 * 5 * 7)^3
 #define WEIGHT_CRITERIA 279936
@@ -34,8 +34,7 @@ static int weight_list[64] =
 7776, 8748, 10368, 11664, 15552, 17496, 23328, 31104, 34992, 46656, 
 69984, 93312, 139968, 279936};
 */
-static int inv_weight_list[64] = 
-{279936, 139968, 93312, 69984, 46656, 34992, 31104, 23328, 17496, 15552, 
+static int inv_weight_list[64] = {279936, 139968, 93312, 69984, 46656, 34992, 31104, 23328, 17496, 15552, 
 11664, 10368, 8748, 7776, 5832, 5184, 4374, 3888, 3456, 2916, 
 2592, 2187, 1944, 1728, 1458, 1296, 1152, 972, 864, 729, 
 648, 576, 486, 432, 384, 324, 288, 243, 216, 192, 
@@ -80,7 +79,6 @@ struct kernel_thread_frame
 static long long idle_ticks;    /* # of timer ticks spent idle. */
 static long long kernel_ticks;  /* # of timer ticks in kernel threads. */
 static long long user_ticks;    /* # of timer ticks in user programs. */
-
 /* Scheduling. */
 #define TIME_SLICE 4            /* # of timer ticks to give each thread. */
 static unsigned thread_ticks;   /* # of timer ticks since last yield. */
@@ -171,9 +169,10 @@ thread_tick (void)
     kernel_ticks++;
 
   /* Enforce preemption. */
+   
   if (++thread_ticks >= TIME_SLICE)
   {
-    if(t->order_count<50)  //minsik
+    if(t->order_count<MAX_COUNT)  //minsik
     {
       t->order_array[(t->order_count)++] = ++gogo_count;
     } 
@@ -367,17 +366,31 @@ thread_exit (void)
 
 /* Yields the CPU.  The current thread is not put to sleep and
    may be scheduled again immediately at the scheduler's whim. */
+static inline uint32_t get_cycles(void)
+{
+uint32_t low,high;
+__asm__ __volatile__("rdtsc" : "=a"(low), "=d"(high));
+return (low);
+};
+
   void
 thread_yield (void) 
 {
   struct thread *cur = thread_current ();
   enum intr_level old_level;
-
+  uint32_t st,ed;
   ASSERT (!intr_context ());
 
   old_level = intr_disable ();
   if (cur != idle_thread) 
-    list_insert_ordered (&ready_list, &cur->elem, thread_priority_less, NULL);
+  {	   st = get_cycles();
+	  list_insert_ordered (&ready_list, &cur->elem, thread_priority_less, NULL);
+	   ed = get_cycles();
+          if(cur->time_count<MAX_COUNT)
+		{
+			cur->time_array[cur->time_count++] = ed-st;
+		}
+	}
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
@@ -549,7 +562,8 @@ init_thread (struct thread *t, const char *name, int priority)
   t->inv_weight = inv_weight_list[priority];
   t->virtual_time = inv_weight_list[priority];
   t->order_count =0; //minsik
-  /*end*/
+  t->time_count =0;
+/*end*/
   t->magic = THREAD_MAGIC;
   list_push_back (&all_list, &t->allelem);
 }

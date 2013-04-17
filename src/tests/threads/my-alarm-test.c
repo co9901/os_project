@@ -3,6 +3,7 @@
    that it is valid. */
 
 #include <stdio.h>
+#include <string.h>
 #include "tests/threads/tests.h"
 #include "threads/init.h"
 #include "threads/malloc.h"
@@ -10,26 +11,31 @@
 #include "threads/thread.h"
 #include "devices/timer.h"
 static void gogo(); //minsik
-static void test_sleep (int thread_cnt, int iterations);
+static void test_sleep (int thread_cnt, int iterations,int l);
 static int porder[50000][2]; //minsik
+static char threadname[50000][20];
 static int porder_count=0; //minsik
-static int p2order[50000][2];
+static int p2order[50000];
 static int time[50000][2];
 static int time_count=0;
-static int pri[100];
+static int pri[1001];
+static int end_count=0;
 
 
-
-	void
+void
 my_test_alarm_single (void) 
 {
-	test_sleep (3, 1);
+	test_sleep (3, 1,0);
 }
 
 	void
 test_my_alarm_fairness (void) 
 {
-   test_sleep (3, 2);
+   test_sleep (200, 2,0);
+}
+void test_my_alarm_ef (void)
+{
+   test_sleep (200,2,1);
 }
 
 /* Information about the test. */
@@ -56,7 +62,7 @@ static void sleeper (void *);
 
 /* Runs THREAD_CNT threads thread sleep ITERATIONS times each. */
 	static void
-test_sleep (int thread_cnt, int iterations) 
+test_sleep (int thread_cnt, int iterations,int l) 
 {
 	struct sleep_test test;
 	struct sleep_thread *threads;
@@ -87,18 +93,16 @@ test_sleep (int thread_cnt, int iterations)
 
 	/* Start threads. */
 	ASSERT (output != NULL);
+
 	for (i = 0; i < thread_cnt; i++)
 	{
 		struct sleep_thread *t = threads + i;
 		char name[16];
 
-		t->test = &test;
-		t->id = i;
-		t->duration = (i + 1) * 10;
-		t->iterations = 0;
-
+	
 		snprintf (name, sizeof name, "thread %d", i);
-		thread_create (name, (PRI_MIN+i)%63, gogo, NULL);//프라이어리티알아서
+		thread_create (name, i%30, gogo, NULL);//프라이어리티알아서
+
 	}
 
 	/* Wait long enough for all the threads to finish. */
@@ -106,42 +110,22 @@ test_sleep (int thread_cnt, int iterations)
 
 	/* Acquire the output lock in case some rogue thread is still
 	   running. */
-
+if(l==0){
 	for(i=0;i<porder_count;i++)
 	{
-		printf("%d %d\n",i,p2order[i][0]);
-	}  
+		if(threadname[i][0]=='t'){
+		printf("%d %s\n",p2order[i],threadname[i]);}
+	}
+
+}
+if(l==1)
+{
+	for(i=0;i<time_count;i++)
+	{
+		printf("%d\n",time[i][0]);
+}
+}  
 	lock_acquire (&test.output_lock);
-
-	/* Print completion order. */
-	/*  product = 0;
-	    for (op = output; op < test.output_pos; op++) 
-	    {
-	    struct sleep_thread *t;
-	    int new_prod;
-
-	    ASSERT (*op >= 0 && *op < thread_cnt);
-	    t = threads + *op;
-
-	    new_prod = ++t->iterations * t->duration;
-
-	    msg ("thread %d: duration=%d, iteration=%d, product=%d",
-	    t->id, t->duration, t->iterations, new_prod);
-
-	    if (new_prod >= product)
-	    product = new_prod;
-	    else
-	    fail ("thread %d woke up out of order (%d > %d)!",
-	    t->id, product, new_prod);
-	    }
-	 */
-	/* Verify that we had the proper number of wakeups. */
-	/* for (i = 0; i < thread_cnt; i++)
-	   if (threads[i].iterations != iterations)
-	   fail ("thread %d woke up %d times instead of %d",
-	   i, threads[i].iterations, iterations);
-	 */
-
 	lock_release (&test.output_lock);
 
 	free (output);
@@ -151,41 +135,28 @@ test_sleep (int thread_cnt, int iterations)
 static void gogo()
 {
 	int t=0;
-	//while(t<=210000000)
-	while(t<=500000) //적당히 루프 끝내기위해서
+	while(t<=1000000) //적당히 루프 끝내기위해서
 	{
 		t++;
 	}
 	struct thread *tt = thread_current();
-
-	printf("end %d\n",thread_current()->priority); //끝나는거알림
-	int i;
+	printf("end %d %d %s\n",thread_current()->priority,++end_count,tt->name); //끝나는거알림
+	int i,j,temp;
 	for(i=0;i<tt->order_count;i++)
 	{
-		p2order[tt->order_array[i]][0] = tt->priority;
+		p2order[tt->order_array[i]] = tt->priority;
 		porder[porder_count][0] = tt->order_array[i];
 		porder[porder_count++][1] = tt->priority;
-	}//옮김
+		j=0;		
+		while(tt->name[j]!=NULL)
+		{
+			threadname[tt->order_array[i]][j] = tt->name[j++];
+		}	
+	}
 	for(i=0;i<tt->time_count;i++)
 	{
 		time[time_count][0] = tt->time_array[i];
 		time[time_count++][1] = tt->priority;
 	}
 }
-/* Sleeper thread. */
-	static void
-sleeper (void *t_) 
-{
-	struct sleep_thread *t = t_;
-	struct sleep_test *test = t->test;
-	int i;
 
-	for (i = 1; i <= test->iterations; i++) 
-	{
-		int64_t sleep_until = test->start + i * t->duration;
-		timer_sleep (sleep_until - timer_ticks ());
-		lock_acquire (&test->output_lock);
-		*test->output_pos++ = t->id;
-		lock_release (&test->output_lock);
-	}
-}

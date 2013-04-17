@@ -39,6 +39,7 @@ static const struct test tests[] =
     {"mlfqs-nice-10", test_mlfqs_nice_10},
     {"mlfqs-block", test_mlfqs_block},
     {"my-alarm-fairness", test_my_alarm_fairness},
+    {"my-alarm-ef", test_my_alarm_ef},
   };
 
 static const char *test_name;
