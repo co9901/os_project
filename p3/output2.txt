@@ -1,0 +1,33 @@
+thread 2개
+weight 1:4
+my: 279936 69984  ideal: 279936 69984  service time: 0 0  gps: 0 0  s_t_e: 0 0 
+my: 279936 139968  ideal: 279936 139968  service time: 0 5  gps: 1 4  s_t_e: -1 1 
+my: 279936 209952  ideal: 279936 209952  service time: 0 10  gps: 2 8  s_t_e: -2 2 
+my: 279936 279936  ideal: 279936 279936  service time: 0 15  gps: 3 12  s_t_e: -3 3 
+my: 279936 349920  ideal: 279936 349920  service time: 0 20  gps: 4 16  s_t_e: -4 4 
+my: 559872 349920  ideal: 559872 349920  service time: 5 20  gps: 5 20  s_t_e: 0 0 
+my: 559872 419904  ideal: 559872 419904  service time: 5 25  gps: 6 24  s_t_e: -1 1 
+my: 559872 489888  ideal: 559872 489888  service time: 5 30  gps: 7 28  s_t_e: -2 2 
+my: 559872 559872  ideal: 559872 559872  service time: 5 35  gps: 8 32  s_t_e: -3 3 
+my: 559872 629856  ideal: 559872 629856  service time: 5 40  gps: 9 36  s_t_e: -4 4 
+my: 839808 629856  ideal: 839808 629856  service time: 10 40  gps: 10 40  s_t_e: 0 0 
+my: 839808 699840  ideal: 839808 699840  service time: 10 45  gps: 11 44  s_t_e: -1 1 
+my: 839808 769824  ideal: 839808 769824  service time: 10 50  gps: 12 48  s_t_e: -2 2 
+my: 839808 839808  ideal: 839808 839808  service time: 10 55  gps: 13 52  s_t_e: -3 3 
+my: 839808 909792  ideal: 839808 909792  service time: 10 60  gps: 14 56  s_t_e: -4 4 
+my: 1119744 909792  ideal: 1119744 909792  service time: 15 60  gps: 15 60  s_t_e: 0 0 
+my: 1119744 979776  ideal: 1119744 979776  service time: 15 65  gps: 16 64  s_t_e: -1 1 
+my: 1119744 1049760  ideal: 1119744 1049760  service time: 15 70  gps: 17 68  s_t_e: -2 2 
+my: 1119744 1119744  ideal: 1119744 1119744  service time: 15 75  gps: 18 72  s_t_e: -3 3 
+my: 1119744 1189728  ideal: 1119744 1189728  service time: 15 80  gps: 19 76  s_t_e: -4 4 
+my: 1399680 1189728  ideal: 1399680 1189728  service time: 20 80  gps: 20 80  s_t_e: 0 0 
+my: 1399680 1259712  ideal: 1399680 1259712  service time: 20 85  gps: 21 84  s_t_e: -1 1 
+my: 1399680 1329696  ideal: 1399680 1329696  service time: 20 90  gps: 22 88  s_t_e: -2 2 
+my: 1399680 1399680  ideal: 1399680 1399680  service time: 20 95  gps: 23 92  s_t_e: -3 3 
+my: 1399680 1469664  ideal: 1399680 1469664  service time: 20 100  gps: 24 96  s_t_e: -4 4 
+my: 1679616 1469664  ideal: 1679616 1469664  service time: 25 100  gps: 25 100  s_t_e: 0 0 
+my: 1679616 1539648  ideal: 1679616 1539648  service time: 25 105  gps: 26 104  s_t_e: -1 1 
+my: 1679616 1609632  ideal: 1679616 1609632  service time: 25 110  gps: 27 108  s_t_e: -2 2 
+my: 1679616 1679616  ideal: 1679616 1679616  service time: 25 115  gps: 28 112  s_t_e: -3 3 
+my: 1679616 1749600  ideal: 1679616 1749600  service time: 25 120  gps: 29 116  s_t_e: -4 4 
+my: 1959552 1749600  ideal: 1959552 1749600  service time: 30 120  gps: 30 120  s_t_e: 0 0 
