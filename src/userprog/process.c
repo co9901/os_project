@@ -18,6 +18,8 @@
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 
+#define MAX_INPUT 128
+
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
 
@@ -38,6 +40,7 @@ process_execute (const char *file_name)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
 
+  ///////////////////
   char *fn_temp = palloc_get_page (0);
   if (fn_temp == NULL)
     return TID_ERROR;
@@ -47,17 +50,24 @@ process_execute (const char *file_name)
   token = strtok_r(fn_temp, " ", &save_ptr);
 
   tid = thread_create(token, PRI_DEFAULT, start_process, fn_copy);
-  if (tid == TID_ERROR)
+  if (tid == TID_ERROR) 
     palloc_free_page(fn_copy);
   palloc_free_page(fn_temp);
 
-  return tid;
+  
+  /////////////////
+  /* char *token, *save_ptr;*/
+  /* token = strtok_r(fn_copy, " ", &save_ptr);*/
+  /* tid = thread_create(token, PRI_DEFAULT, start_process, fn_copy);*/
+  /* if (tid == TID_ERROR)*/
+  /*   palloc_free_page(fn_copy);*/
 
-  /* Create a new thread to execute FILE_NAME. */
+  /* Create a new thread to execute FILE_NAME.*/
   /* tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);*/
   /* if (tid == TID_ERROR)*/
-  /*   palloc_free_page (fn_copy); */
-  /* return tid;*/
+  /*   palloc_free_page (fn_copy);*/
+  return tid;
+
 }
 
 /* A thread function that loads a user process and starts it
@@ -74,68 +84,60 @@ start_process (void *file_name_)
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
-
+///
   int argc = 0;
-  char **argv = palloc_get_page (0);
+  char *argv[128];
   char *token, *save_ptr = NULL;
 
   for(token = strtok_r (file_name, " ", &save_ptr); token != NULL; token = strtok_r(NULL, " ", &save_ptr)) {
-    argv[argc] = palloc_get_page(0);
-    strlcpy(argv[argc], token, PGSIZE);
-    argc++;
+    argv[argc++] = token;
+    //limit size
   }
+////
+  success = load (argv[0], &if_.eip, &if_.esp);
 
-  success = load (file_name, &if_.eip, &if_.esp);
-
-
+////
   if (success) {
-    char **argv_addr = palloc_get_page(0);
-    int i,j;
+    /* thread_current() -> esp = PHYS_BASE - PGSIZE;*/
+
+    int i, len;
 
     for(i=argc-1;i>=0;i--) {
-      for (j=strlen(argv[i]);j>=0;j--){
-        if_.esp -= 1;
-        *(char *) if_.esp = (argv[i][j]);
-      }
-      argv_addr[i] = (char *) if_.esp;
+      len = strnlen(argv[i], MAX_INPUT);
+      if_.esp -= len+1;
+      strlcpy(if_.esp, argv[i], MAX_INPUT);
+      argv[i] = if_.esp;
     }
 
-    if_.esp -= (if_.esp - if_.esp & 4);
-    if_.esp -= 4;
-    *(char **) if_.esp = NULL;
+    if ((len = *(int *)if_.esp %4) != 0)
+      if_.esp -= len;
+
+    if_.esp = if_.esp - 4;
+    *(int *) if_.esp = 0;
 
     for(i=argc-1;i>=0;i--) {
-      if_.esp -= 4;
-      *(char **) if_.esp = argv_addr[i];
+      if_.esp = if_.esp - (sizeof(argv[i]));
+      *(char **) if_.esp = argv[i];
     }
 
-    char **addr = (char **) if_.esp;
-    if_.esp -= 4;
-    *(char ***) if_.esp = addr;
-    if_.esp -= 4;
+    if_.esp = if_.esp -4;
+    *(char ***) if_.esp = if_.esp + 4;
+
+    if_.esp = if_.esp - sizeof(int);
     *(int *) if_.esp = argc;
-    if_.esp -= 4;
-    *(void **) if_.esp = 0;
 
-
-    palloc_free_page(argv_addr);
+    if_.esp = if_.esp - sizeof(void *);
+    *(int *) if_.esp = 0;
 
   }
 
-  int k;
-  for(k=0;k<argc;k++){
-    palloc_free_page(argv[k]);
-  }
+  /* If load failed, quit.*/
+/////
 
-  palloc_free_page (argv);
-  /* If load failed, quit. */
   palloc_free_page (file_name);
 
   if(!success)
-    thread_exit ();
-
-  /* if (!success) */
-  /*   thread_exit ();*/
+    thread_exit();
 
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
