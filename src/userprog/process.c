@@ -100,8 +100,9 @@ start_process (void *file_name_)
       argv_addr[i] = (char *) if_.esp;
     }
 
-    if_.esp -= (if_.esp - if_.esp & 4);
-    if_.esp -= 4;
+   unsigned l = (unsigned)if_.esp%4;
+   	if_.esp -= l;
+        if_.esp -= 4;
     *(char **) if_.esp = NULL;
 
     for(i=argc-1;i>=0;i--) {
@@ -116,7 +117,7 @@ start_process (void *file_name_)
     *(int *) if_.esp = argc;
     if_.esp -= 4;
     *(void **) if_.esp = 0;
-
+   // printf("%x\n",if_.esp);
 
     palloc_free_page(argv_addr);
 
@@ -508,7 +509,7 @@ setup_stack (void **esp)
     {
       success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
       if (success)
-        *esp = PHYS_BASE - 12;
+        *esp = PHYS_BASE;
       else
         palloc_free_page (kpage);
     }
