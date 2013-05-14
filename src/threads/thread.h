@@ -103,6 +103,12 @@ struct thread
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
+		
+		/* My */
+		struct list child;
+		struct list_elem child_elem;
+		struct thread *parent;
+		struct list files;
 #endif
 
     /* Owned by thread.c. */
@@ -136,6 +142,7 @@ void thread_yield (void);
 
 //my implementation
 static bool thread_priority_less(const struct list_elem *e1, const struct list_elem *e2, void *aux);
+struct thread *get_thread_by_tid(tid_t);
 //end
 
 /* Performs some operation on thread t, given auxiliary data AUX. */
