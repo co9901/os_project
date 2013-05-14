@@ -30,6 +30,7 @@ process_execute (const char *file_name)
 {
   char *fn_copy;
   tid_t tid;
+  struct thread *t;
 
   /* Make a copy of "FILE_NAME".
      Otherwise there's a race between the caller and load(). */
@@ -50,9 +51,10 @@ process_execute (const char *file_name)
   if (tid == TID_ERROR)
     palloc_free_page(fn_copy);
 	else{
+    
 		t = get_thread_by_tid(tid);
 		if(t->ret_status == -1)
-			tid = tid_ERROR;
+			tid = TID_ERROR;
 		thread_unblock(t);
 		if(t->ret_status == -1)
 			process_wait(t->tid);
@@ -185,9 +187,9 @@ process_wait (tid_t child_tid)
 
 	ret = -1;
 	t = get_thread_by_tid (child_tid);
-	if (!t || t->status == THREAD_DYING || t->ret_status == RET_STATUS_INVALID)
+	if (!t || t->status == THREAD_DYING || t->ret_status == RET_INVALID)
 		goto done;
-	if (t->ret_status != RET_STATUS_DEFAULT && t->ret_status != RET_STATUS_INVALID)
+	if (t->ret_status != RET_DEFAULT && t->ret_status != RET_INVALID)
 	{
 		ret = t->ret_status;
 		goto done;
@@ -199,7 +201,7 @@ process_wait (tid_t child_tid)
 		thread_unblock (t);
 
 done:
-	t->ret_status = RET_STATUS_INVALID;
+	t->ret_status = RET_INVALID;
 	return ret;
 }
 
