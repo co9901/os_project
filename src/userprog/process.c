@@ -85,10 +85,11 @@ start_process (void *file_name_)
     argc++;
   }
 
-  success = load (file_name, &if_.eip, &if_.esp);
+  success = load (argv[0], &if_.eip, &if_.esp);
 
 
   if (success) {
+
     char **argv_addr = palloc_get_page(0);
     int i,j;
 
@@ -100,7 +101,8 @@ start_process (void *file_name_)
       argv_addr[i] = (char *) if_.esp;
     }
 
-    if_.esp -= (if_.esp - if_.esp & 4);
+    unsigned l = (unsigned) if_.esp%4;
+    if_.esp -= l;
     if_.esp -= 4;
     *(char **) if_.esp = NULL;
 
@@ -119,7 +121,6 @@ start_process (void *file_name_)
 
 
     palloc_free_page(argv_addr);
-
   }
 
   int k;
@@ -129,10 +130,12 @@ start_process (void *file_name_)
 
   palloc_free_page (argv);
   /* If load failed, quit. */
+
   palloc_free_page (file_name);
 
-  if(!success)
+  if(!success) {
     thread_exit ();
+  }
 
   /* if (!success) */
   /*   thread_exit ();*/
