@@ -159,9 +159,18 @@ start_process (void *file_name_)
    This function will be implemented in problem 2-2.  For now, it
    does nothing. */
 int
-process_wait (tid_t child_tid UNUSED) 
+process_wait (tid_t child_tid) 
 {
-  return -1;
+  struct thread *t = get_thread_by_tid (child_tid);
+
+	if(t == NULL || t->status == THREAD_DYING)
+		return -1;
+	
+	while(t->status == THREAD_BLOCKED){
+		timer_sleep(20);
+	}
+
+	return 1;
 }
 
 /* Free the current process's resources. */
@@ -170,6 +179,14 @@ process_exit (void)
 {
   struct thread *cur = thread_current ();
   uint32_t *pd;
+
+
+	if (cur->parent)
+	{
+		intr_disable ();
+		thread_block ();
+		intr_enable ();
+	}
 
   /* Destroys the current process's page directory and switch back
      to the kernel-only page directory. */
