@@ -55,7 +55,8 @@ process_execute (const char *file_name)
 		t = get_thread_by_tid(tid);
 		if(t->ret_status == -1)
 			tid = TID_ERROR;
-		thread_unblock(t);
+		if(t->status == THREAD_BLOCKED)
+			thread_unblock(t);
 		if(t->ret_status == -1)
 			process_wait(t->tid);
 	}
