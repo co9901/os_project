@@ -264,6 +264,7 @@ thread_create (const char *name, int priority,
 
 	list_init (&t->files);
 	list_init (&t->child);
+	t->ret_status = RET_DEFAULT;
 	if (thread_current() != initial_thread)
 		list_push_back(&thread_current()->child, &t->child_elem);
 	t->parent = thread_current();
@@ -362,18 +363,18 @@ thread_exit (void)
 
 	cur = thread_current ();
 
-	for (l = list_begin (&cur->child); l != list_end (&cur->child); l = list_next (l))
+	/*for (l = list_begin (&cur->child); l != list_end (&cur->child); l = list_next (l))
 	{
 		t = list_entry (l, struct thread, child_elem);
 		t->parent = NULL;
 		list_remove (&t->child_elem);
-	}
+	}*/
 	process_exit ();
 
-	ASSERT (list_size (&cur->files) == 0);
+/*	ASSERT (list_size (&cur->files) == 0);
 
 	if (cur->parent && cur->parent != initial_thread)
-		list_remove (&cur->child_elem);
+		list_remove (&cur->child_elem);*/
 #endif
 
   /* Remove thread from all threads list, set our status to dying,

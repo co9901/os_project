@@ -49,6 +49,14 @@ process_execute (const char *file_name)
   tid = thread_create(token, PRI_DEFAULT, start_process, fn_copy);
   if (tid == TID_ERROR)
     palloc_free_page(fn_copy);
+	else{
+		t = get_thread_by_tid(tid);
+		if(t->ret_status == -1)
+			tid = tid_ERROR;
+		thread_unblock(t);
+		if(t->ret_status == -1)
+			process_wait(t->tid);
+	}
   palloc_free_page(fn_temp);
 
   return tid;
@@ -68,6 +76,7 @@ start_process (void *file_name_)
   char *file_name = file_name_;
   struct intr_frame if_;
   bool success;
+	struct thread *t = thread_current();
 
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
@@ -89,6 +98,8 @@ start_process (void *file_name_)
 
 
   if (success) {
+		t->self = filesys_open(file_name);
+		file_deny_write(t->self);
 
     char **argv_addr = palloc_get_page(0);
     int i,j;
@@ -121,7 +132,9 @@ start_process (void *file_name_)
 
 
     palloc_free_page(argv_addr);
-  }
+		
+	
+	}
 
   int k;
   for(k=0;k<argc;k++){
@@ -133,9 +146,14 @@ start_process (void *file_name_)
 
   palloc_free_page (file_name);
 
-  if(!success) {
+	intr_disable();
+	thread_block();
+	intr_enable();
+
+	if(!success){
+		t->ret_status = -1;
     thread_exit ();
-  }
+	}
 
   /* if (!success) */
   /*   thread_exit ();*/
@@ -162,16 +180,27 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid) 
 {
-  struct thread *t = get_thread_by_tid (child_tid);
+	struct thread *t;
+	int ret;
 
-	if(t == NULL || t->status == THREAD_DYING)
-		return -1;
-	
-	while(t->status == THREAD_BLOCKED){
-		timer_sleep(20);
+	ret = -1;
+	t = get_thread_by_tid (child_tid);
+	if (!t || t->status == THREAD_DYING || t->ret_status == RET_STATUS_INVALID)
+		goto done;
+	if (t->ret_status != RET_STATUS_DEFAULT && t->ret_status != RET_STATUS_INVALID)
+	{
+		ret = t->ret_status;
+		goto done;
 	}
 
-	return 1;
+	ret = t->ret_status;
+	printf ("%s: exit(%d)\n", t->name, t->ret_status);
+	while (t->status == THREAD_BLOCKED)
+		thread_unblock (t);
+
+done:
+	t->ret_status = RET_STATUS_INVALID;
+	return ret;
 }
 
 /* Free the current process's resources. */
@@ -181,7 +210,9 @@ process_exit (void)
   struct thread *cur = thread_current ();
   uint32_t *pd;
 
-
+	file_close (cur->self);
+	cur->self = NULL;
+		
 	if (cur->parent)
 	{
 		intr_disable ();
