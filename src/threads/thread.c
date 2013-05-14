@@ -262,7 +262,13 @@ thread_create (const char *name, int priority,
 
   intr_set_level (old_level);
 
-  /* Add to run queue. */
+	list_init (&t->files);
+	list_init (&t->child);
+	if (thread_current() != initial_thread)
+		list_push_back(&thread_current()->child, &t->child_elem);
+	t->parent = thread_current();
+  
+	/* Add to run queue. */
   thread_unblock (t);
 
   //my implementation
@@ -351,7 +357,23 @@ thread_exit (void)
   ASSERT (!intr_context ());
 
 #ifdef USERPROG
-  process_exit ();
+	struct list_elem *l;
+	struct thread *t, *cur;
+
+	cur = thread_current ();
+
+	for (l = list_begin (&cur->child); l != list_end (&cur->child); l = list_next (l))
+	{
+		t = list_entry (l, struct thread, child_elem);
+		t->parent = NULL;
+		list_remove (&t->child_elem);
+	}
+	process_exit ();
+
+	ASSERT (list_size (&cur->files) == 0);
+
+	if (cur->parent && cur->parent != initial_thread)
+		list_remove (&cur->child_elem);
 #endif
 
   /* Remove thread from all threads list, set our status to dying,
@@ -563,6 +585,7 @@ init_thread (struct thread *t, const char *name, int priority)
   t->virtual_time = inv_weight_list[priority];
   t->order_count =0; //minsik
   t->time_count =0;
+	t->parent = NULL;
 /*end*/
   t->magic = THREAD_MAGIC;
   list_push_back (&all_list, &t->allelem);
@@ -713,3 +736,21 @@ thread_priority_less (const struct list_elem *e1, const struct list_elem *e2, vo
 }
 
 //end
+
+struct thread*
+get_thread_by_tid (tid_t tid)
+{
+	struct list_elem *f;
+	struct thread *ret;
+
+	ret = NULL;
+	for (f = list_begin (&all_list); f != list_end (&all_list); f = list_next (f))
+	{
+		ret = list_entry (f, struct thread, allelem);
+		ASSERT (is_thread (ret));
+		if (ret->tid == tid)
+			return ret;
+	}
+
+	return NULL;
+}
