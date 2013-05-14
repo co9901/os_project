@@ -24,6 +24,9 @@ typedef int tid_t;
 #define PRI_DEFAULT 31                  /* Default priority. */
 #define PRI_MAX 63                      /* Highest priority. */
 
+#define RET_DEFAULT 777777
+#define RET_INVALID 888888
+
 /* A kernel thread or user process.
 
    Each thread structure is stored in its own 4 kB page.  The
@@ -105,10 +108,12 @@ struct thread
     uint32_t *pagedir;                  /* Page directory. */
 		
 		/* My */
+		int ret_status;
 		struct list child;
 		struct list_elem child_elem;
 		struct thread *parent;
 		struct list files;
+		struct file *self;
 #endif
 
     /* Owned by thread.c. */
