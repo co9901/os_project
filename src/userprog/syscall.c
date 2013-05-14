@@ -9,12 +9,11 @@
 
 /* This is a skeleton system call handler */
 
-static void syscall_handler (struct intr_frame *);
-static int sys_write (int fd, const void *buffer, unsigned length);
-static struct lock file_lock;
-
 typedef int pid_t;
 
+static void syscall_handler (struct intr_frame *);
+static int sys_write (int fd, const void *buffer, unsigned length);
+static int sys_halt (void);
 static int sys_write (int fd, const void *buffer, unsigned length);
 static int sys_halt (void);
 static int sys_create (const char *file, unsigned initial_size);
@@ -60,12 +59,33 @@ syscall_handler (struct intr_frame *f)
   int *p;
   int ret;
   p = f -> esp;
-  if (*p == SYS_WRITE) {
-    ret = sys_write(*(p+1), *(p+2), *(p+3));
-    f -> eax = ret;
+
+  if (!is_user_vaddr(p))
+    sys_exit(-1);
+
+  if (*p < SYS_HALT || *p > SYS_INUMBER)
+    sys_exit(-1);
+
+  if (!(is_user_vaddr (p+5) && is_user_vaddr(p+6) && is_user_vaddr(p+7)))
+    sys_exit(-1);
+
+  switch (*p) {
+  case SYS_WRITE :
+    ret = sys_write(*(p+5), *(p+6), *(p+7));
+    break;
+  case SYS_HALT :
+    ret = sys_halt();
+  case SYS_EXIT :
+    ret = sys_exit(-1);
+  case SYS_WAIT :
+    ret = sys_wait(*(p+1));
+  case SYS_EXEC :
+    ret = sys_exec(*(p+1));
   }
 
-  thread_exit();
+  f -> eax = ret;
+
+  //thread_exit();
   return;
 }
  static int
@@ -76,14 +96,15 @@ sys_write (int fd, const void *buffer, unsigned length)
 
   ret = -1;
   lock_acquire (&file_lock);
-  if (fd == STDOUT_FILENO) /* stdout */
+  if (fd == STDOUT_FILENO){ /* stdout */
     putbuf (buffer, length);
+  }
   else if (fd == STDIN_FILENO) /* stdin */
     goto done;
   else if (!is_user_vaddr (buffer) || !is_user_vaddr (buffer + length))
   {
     lock_release (&file_lock);
-    //sys_exit (-1);
+    sys_exit (-1);
   }
   else
   {
@@ -96,6 +117,24 @@ sys_write (int fd, const void *buffer, unsigned length)
 
 done:
   lock_release (&file_lock);
+  return length;
+}
+
+
+static int
+sys_halt (void) {
+  power_off();
+}
+
+static int
+sys_exec (const char *cmd)
+{
+  int ret;
+  if (!cmd || !is_user_vaddr (cmd))
+    return -1;
+  lock_acquire ( &file_lock);
+  ret = process_execute (cmd);
+  lock_release ( &file_lock);
   return ret;
 }
 
@@ -221,4 +260,9 @@ find_fd_elem_by_fd_in_process (int fd)
 	}
 
 	return NULL;
+}
+ static int
+sys_wait (pid_t pid)
+{
+  return process_wait (pid);
 }
