@@ -113,7 +113,7 @@ struct thread
 		struct list_elem child_elem;
 		struct thread *parent;
 		struct list files;
-		struct file self;
+		struct file *self;
 #endif
 
     /* Owned by thread.c. */
