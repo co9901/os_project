@@ -330,6 +330,7 @@ thread_name (void)
   struct thread *
 thread_current (void) 
 {
+
   struct thread *t = running_thread ();
 
   /* Make sure T is really a thread.
