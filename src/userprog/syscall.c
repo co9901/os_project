@@ -66,16 +66,16 @@ syscall_handler (struct intr_frame *f)
 	if (*p < SYS_HALT || *p > SYS_INUMBER)
 		sys_exit(-1);
 
-	if (!(is_user_vaddr (p+5) && is_user_vaddr(p+6) && is_user_vaddr(p+7)))
+	if (!(is_user_vaddr (p+1) && is_user_vaddr(p+2) && is_user_vaddr(p+3)))
 		sys_exit(-1);
 
 
 	switch (*p) {
 		case SYS_WRITE :
-			ret = sys_write(*(p+5), *(p+6), *(p+7));
+			ret = sys_write(*(p+1), *(p+2), *(p+3));
 			break;
 		case SYS_HALT :
-			ret = sys_halt();
+			ret = sys_halt(*(p+1));
 			break;
 		case SYS_WAIT :
 			ret = sys_wait(*(p+1));
@@ -87,7 +87,7 @@ syscall_handler (struct intr_frame *f)
 			ret = sys_exit(*(p+1));
 			break;
 		case SYS_READ:
-			ret = sys_read(*(p+5),*(p+6),*(p+7));
+			ret = sys_read(*(p+1),*(p+2),*(p+3));
 			break;
 		case SYS_CLOSE:
 			ret = sys_close(*(p+1));
@@ -96,7 +96,7 @@ syscall_handler (struct intr_frame *f)
 			ret = sys_filesize(*(p+1));
 			break;
 		case SYS_CREATE:
-			ret = sys_create(*(p+4),*(p+5));
+			ret = sys_create(*(p+1),*(p+2));
 			break;
 		case SYS_OPEN:
 			ret = sys_open(*(p+1));
