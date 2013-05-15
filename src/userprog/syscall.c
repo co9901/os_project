@@ -49,6 +49,7 @@ syscall_init (void)
 {
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
   lock_init(&file_lock);
+	list_init(&file_list);
 }
 
 	static void
@@ -126,11 +127,11 @@ sys_write (int fd, const void *buffer, unsigned length)
 	}
 	else
 	{
-		/* f = find_file_by_fd (fd);*/
-		/* if (!f)*/
-		/*   goto done;*/
+		 f = find_file_by_fd (fd);
+		 if (!f)
+		   goto done;
 
-		/* ret = file_write (f, buffer, length);*/
+		 ret = file_write (f, buffer, length);
 	}
 
 done:
