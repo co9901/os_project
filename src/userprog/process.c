@@ -17,7 +17,7 @@
 #include "threads/palloc.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
-
+#include "threads/synch.h"
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
 
@@ -188,7 +188,9 @@ process_wait (tid_t child_tid)
 
 	ret = -1;
 	t = get_thread_by_tid (child_tid);
-	if (!t || t->status == THREAD_DYING || t->ret_status == RET_INVALID)
+	if (!t)
+	{ return ret;}
+	if (t->status == THREAD_DYING || t->ret_status == RET_INVALID)
 		goto done;
 	if (t->ret_status != RET_DEFAULT && t->ret_status != RET_INVALID)
 	{
@@ -197,10 +199,11 @@ process_wait (tid_t child_tid)
 	}
 
 	ret = t->ret_status;
-	printf ("%s: exit(%d)\n", t->name, t->ret_status);
-	while (t->status == THREAD_BLOCKED)
-		thread_unblock (t);
-
+	while(t->ret_status == 777777)
+	{
+		if(t->status == THREAD_BLOCKED){thread_unblock(t);}
+	}
+	
 done:
 	t->ret_status = RET_INVALID;
 	return ret;
