@@ -132,7 +132,7 @@ start_process (void *file_name_)
     *(int *) if_.esp = argc;
     if_.esp -= 4;
     *(void **) if_.esp = 0;
-
+   // printf("%x\n",if_.esp);
 
     palloc_free_page(argv_addr);
 		
