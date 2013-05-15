@@ -66,12 +66,12 @@ syscall_handler (struct intr_frame *f)
   if (*p < SYS_HALT || *p > SYS_INUMBER)
     sys_exit(-1);
 
-  if (!(is_user_vaddr (p+5) && is_user_vaddr(p+6) && is_user_vaddr(p+7)))
+  if (!(is_user_vaddr (p+1) && is_user_vaddr(p+2) && is_user_vaddr(p+3)))
     sys_exit(-1);
 
   switch (*p) {
   case SYS_WRITE :
-    ret = sys_write(*(p+5), *(p+6), *(p+7));
+    ret = sys_write(*(p+1), *(p+2), *(p+3));
     break;
   case SYS_HALT :
     ret = sys_halt();
