@@ -14,8 +14,6 @@ typedef int pid_t;
 static void syscall_handler (struct intr_frame *);
 static int sys_write (int fd, const void *buffer, unsigned length);
 static int sys_halt (void);
-static int sys_write (int fd, const void *buffer, unsigned length);
-static int sys_halt (void);
 static int sys_create (const char *file, unsigned initial_size);
 static int sys_open (const char *file);
 static int sys_close (int fd);
@@ -75,7 +73,7 @@ syscall_handler (struct intr_frame *f)
 			ret = sys_write(*(p+1), *(p+2), *(p+3));
 			break;
 		case SYS_HALT :
-			ret = sys_halt(*(p+1));
+			ret = sys_halt();
 			break;
 		case SYS_WAIT :
 			ret = sys_wait(*(p+1));
