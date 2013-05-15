@@ -21,14 +21,11 @@ static int sys_read (int fd, void *buffer, unsigned size);
 static int sys_exec (const char *cmd);
 static int sys_wait (pid_t pid);
 static int sys_filesize (int fd);
-static int sys_tell (int fd);
-static int sys_seek (int fd, unsigned pos);
-static int sys_remove (const char *file);
 
-static struct file *find_file_by_fd (int fd);
-static struct fd_elem *find_fd_elem_by_fd (int fd);
+static struct file *find_by_fd (int fd);
+static struct fd_elem *find_fde_by_fd (int fd);
 static int alloc_fid (void);
-static struct fd_elem *find_fd_elem_by_fd_in_process (int fd);
+static struct fd_elem *find_pro (int fd);
 
 typedef int (*handler) (uint32_t, uint32_t, uint32_t);
 static handler syscall_vec[128];
@@ -112,14 +109,13 @@ sys_write (int fd, const void *buffer, unsigned length)
 {
 	struct file * f;
 	int ret;
-	fd =1;
 	ret = -1;
 	lock_acquire (&file_lock);
-	if (fd == STDOUT_FILENO){ /* stdout */
+	if (fd == STDOUT_FILENO){ 
 		putbuf (buffer, length);
 	}
-	else if (fd == STDIN_FILENO) /* stdin */
-		goto done;
+	else if (fd == STDIN_FILENO)
+	{}
 	else if (!is_user_vaddr (buffer) || !is_user_vaddr (buffer + length))
 	{
 		lock_release (&file_lock);
@@ -127,14 +123,14 @@ sys_write (int fd, const void *buffer, unsigned length)
 	}
 	else
 	{
-		 f = find_file_by_fd (fd);
+		 f = find_by_fd (fd);
 		 if (!f)
-		   goto done;
-
-		 ret = file_write (f, buffer, length);
+		   {}
+		else
+		 {ret = file_write (f, buffer, length);
+		}	
 	}
 
-done:
 	lock_release (&file_lock);
 	return length;
 }
@@ -172,19 +168,18 @@ static int sys_open (const char *file)
 	if(!file){return -1;}
 
 	f = filesys_open(file);
-	if(!f){goto done;}
+	if(!f){return -1;}
 	fde = (struct fd_elem *)malloc(sizeof (struct fd_elem));
 	if(!fde)
 	{
 		file_close(f);
-		goto done;
+		return ret;
 	}
 	fde->file = f;
 	fde->fd = alloc_fid();
 	list_push_back(&file_list,&fde->elem);
 	list_push_back(&thread_current ()->files,&fde->thread_elem);
 	ret = fde->fd;
-done:
 	return ret;
 }
 
@@ -193,17 +188,15 @@ static int sys_close (int fd)
 	struct fd_elem *f;
 	int ret;
 
-	f = find_fd_elem_by_fd_in_process (fd);
+	f = find_pro (fd);
 
-	if (!f) 
-		goto done;
+	if (!f) return 0;
+	else{
 	file_close (f->file);
 	list_remove (&f->elem);
 	list_remove (&f->thread_elem);
 	free (f);
-
-done:
-	return 0;
+	return 0;}
 }
 
 	static int
@@ -211,7 +204,7 @@ sys_filesize (int fd)
 {
 	struct file *f;
 
-	f = find_file_by_fd (fd);
+	f = find_by_fd (fd);
 	if (!f)
 		return -1;
 	return file_length (f);
@@ -223,49 +216,45 @@ sys_read (int fd, void *buffer, unsigned size)
 	unsigned i;
 	int ret;
 
-	ret = -1; /* Initialize to zero */
+	ret = -1; 
 	lock_acquire (&file_lock);
-	if (fd == STDIN_FILENO) /* stdin */
+	if (fd == STDIN_FILENO)
 	{
 		for (i = 0; i != size; ++i)
 			*(uint8_t *)(buffer + i) = input_getc ();
 		ret = size;
-		goto done;
+		return ret;
 	}
-	else if (fd == STDOUT_FILENO) /* stdout */
-		goto done;
-	else if (!is_user_vaddr (buffer) || !is_user_vaddr (buffer + size)) /* bad ptr */
+	else if (fd == STDOUT_FILENO)
+		return ret;
+	else if (!is_user_vaddr (buffer) || !is_user_vaddr (buffer + size))
 	{
 		lock_release (&file_lock);
 		sys_exit (-1);
 	}
 	else
 	{
-		f = find_file_by_fd (fd);
-		if (!f)
-			goto done;
+		f = find_by_fd (fd);
+		if (!f){return ret;}
 		ret = file_read (f, buffer, size);
 	}
-
-done:
 	lock_release (&file_lock);
-	return ret;
 	return ret;
 }
 
-	static struct file *
-find_file_by_fd (int fd)
+static struct file *
+find_by_fd (int fd)
 {
 	struct fd_elem *ret;
 
-	ret = find_fd_elem_by_fd (fd);
+	ret = find_fde_by_fd (fd);
 	if (!ret)
 		return NULL;
 	return ret->file;
 }
 
 	static struct fd_elem *
-find_fd_elem_by_fd (int fd)
+find_fde_by_fd (int fd)
 {
 	struct fd_elem *ret;
 	struct list_elem *l;
@@ -287,7 +276,7 @@ alloc_fid (void)
 	return fid++;
 }
 	static struct fd_elem *
-find_fd_elem_by_fd_in_process (int fd)
+find_pro (int fd)
 {
 	struct fd_elem *ret;
 	struct list_elem *l;
@@ -319,43 +308,9 @@ sys_exit(int status)
 	}
 
 	t->ret_status = status;
+	printf("%s: exit(%d)\n",t->name, status);
 	thread_exit ();
 	return -1;
-}
-
-
-	static int
-sys_tell (int fd)
-{
-	struct file *f;
-
-	f = find_file_by_fd (fd);
-	if (!f)
-		return -1;
-	return file_tell (f);
-}
-
-	static int
-sys_seek (int fd, unsigned pos)
-{
-	struct file *f;
-
-	f = find_file_by_fd (fd);
-	if (!f)
-		return -1;
-	file_seek (f, pos);
-	return 0; /* Not used */
-}
-
-	static int
-sys_remove (const char *file)
-{
-	if (!file)
-		return false;
-	if (!is_user_vaddr (file))
-		sys_exit (-1);
-
-	return filesys_remove (file);
 }
 
 	static int
