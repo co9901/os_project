@@ -17,8 +17,6 @@ struct frame_entry{
 };
 
 struct frame_table{
-	//synchronizing for frame table
-	struct lock lock;
 	struct list frame_list;
 };
 
