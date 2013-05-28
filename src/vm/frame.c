@@ -1,7 +1,7 @@
 #include "vm/frame.h"
 #include "threads/palloc.h"
 #include "threads/malloc.h"
-#include "threads/threads.h"
+#include "threads/thread.h"
 #include "threads/synch.h"
 #include "userprog/pagedir.h"
 #include "threads/vaddr.h"

@@ -1,3 +1,6 @@
+#include <hash.h>
+#include "vm/page.h"
+#include "vm/frame.h"
 #include "threads/thread.h"
 #include <debug.h>
 #include <stddef.h>
@@ -15,8 +18,7 @@
 #ifdef USERPROG
 #include "userprog/process.h"
 #endif
-#include <hash.h>
-#include "vm/page.h"
+
 
 /* Random value for struct thread's `magic' member.
    Used to detect stack overflow.  See the big comment at the top
