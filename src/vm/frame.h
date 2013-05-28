@@ -26,3 +26,4 @@ void init_frame_table (void);
 void *get_frame (int palloc_flags);
 bool free_frame (void *frame);
 void set_page_in_frame(void *kpage, void *upage);
+#endif
