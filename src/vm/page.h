@@ -1,3 +1,4 @@
+
 #ifndef USERPROG_PROCESS_H
 #define USERPROG_PROCESS_H
 #include "threads/thread.h"
@@ -29,3 +30,4 @@ void init_sup_page(struct hash *suppagetable);
 void insert_sup_page(struct hash *suppagetable, void *vaddr, void *paddr);
 void remove_sup_page(struct hash *suppagetable);
 void free_page(struct hash_elem *e, void *aux UNUSED);
+#endif
