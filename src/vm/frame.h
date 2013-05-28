@@ -17,8 +17,6 @@ struct frame_entry{
 };
 
 struct frame_table{
-	//synchronizing for frame table
-	struct lock lock;
 	struct list frame_list;
 };
 
@@ -26,3 +24,4 @@ void init_frame_table (void);
 void *get_frame (int palloc_flags);
 bool free_frame (void *frame);
 void set_page_in_frame(void *kpage, void *upage);
+#endif

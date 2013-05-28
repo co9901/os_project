@@ -1,26 +1,28 @@
 #include "vm/frame.h"
 #include "threads/palloc.h"
 #include "threads/malloc.h"
-#include "threads/threads.h"
+#include "threads/thread.h"
 #include "threads/synch.h"
 #include "userprog/pagedir.h"
 #include "threads/vaddr.h"
 
 // frame table
 struct frame_table *frame_tb;
+struct lock framelock;
 
 void
 init_frame_table(void)
 {
 	frame_tb = (struct frame_table*)malloc(sizeof(struct frame_table));
-	lock_init( &(frame_tb->lock) );
 	list_init( &(frame_tb->frame_list) );
+	lock_init(&framelock);
 }
 
 void*
 get_frame(int flags)
 {
-	lock_acquire( &(frame_tb->lock) );
+	//lock_acquire( &(frame_tb->lock) );
+	lock_acquire(&framelock);
 	
 	struct thread *t = thread_current();
 	void *page = palloc_get_page (flags);
@@ -41,7 +43,8 @@ get_frame(int flags)
 		list_push_back ( &(frame_tb->frame_list), &(frame->elem) );
 	}
 
-	lock_release( &(frame_tb->lock) );
+	lock_release(&framelock);
+	//lock_release( &(frame_tb->lock) );
 
 	return page;
 }
@@ -49,7 +52,8 @@ get_frame(int flags)
 bool
 free_frame(void *frame)
 {
-	lock_acquire( &(frame_tb->lock) );
+	//lock_acquire( &(frame_tb->lock) );
+	lock_acquire(&framelock);
 	
 	struct list_elem *e;
 	struct frame_entry *fe;
@@ -64,12 +68,13 @@ free_frame(void *frame)
 			list_remove( &(fe->elem) );
 			free(fe);
 			
-			lock_release( &(frame_tb->lock) );
+			lock_release(&framelock);
 			return true;
 		}
 	}
 	
-	lock_release( &(frame_tb->lock) );
+	lock_release(&framelock);
+	//lock_release( &(frame_tb->lock) );
 	return false;
 }
 
@@ -77,7 +82,8 @@ free_frame(void *frame)
 void
 set_page_in_frame(void *kpage, void *upage)
 {
-	lock_acquire( &(frame_tb->lock) );
+	//lock_acquire( &(frame_tb->lock) );
+	lock_acquire(&framelock);
 
 	struct list_elem *e;
 	struct frame_entry *fe;
@@ -91,5 +97,6 @@ set_page_in_frame(void *kpage, void *upage)
 		}
 	}
 
-	lock_release( &(frame_tb->lock) );
+	lock_release(&framelock);
+	//lock_release( &(frame_tb->lock) );
 }

@@ -1,7 +1,7 @@
 #include "vm/page.h"
 #include "threads/palloc.h"
 #include "threads/malloc.h"
-#include "threads/threads.h"
+#include "threads/thread.h"
 #include "threads/synch.h"
 #include "userprog/pagedir.h"
 #include "threads/vaddr.h"
@@ -23,14 +23,14 @@ page_less(const struct hash_elem *a, const struct hash_elem *b, void *aux UNUSED
 {
 	const struct page *p1 = hash_entry(a, struct page, hash_elem);
 	const struct page *p2 = hash_entry(b, struct page, hash_elem);
-	return a->vaddr < b->vaddr;
+	return p1->vaddr < p2->vaddr;
 }
 
 // find a supplemental page corresponding to given virtual address
 struct page*
 find_page(struct hash *suppagetable, const void *addr)
 {
-	struct page *p;
+	struct page p;
 	struct hash_elem *e;
 
 	p.vaddr = addr;
@@ -59,7 +59,7 @@ insert_sup_page(struct hash *suppagetable, void *vaddr, void *paddr)
 		p->paddr = paddr;
 		p->valid_page = true;
 		p->swap_index = -1;
-		p->thread = thread_current();
+		p->t = thread_current();
 		// hash insert return NULL if success, else return a member if it already exists
 		if( hash_insert(suppagetable, &p->hash_elem) != NULL )
 			PANIC("same virtual address");
