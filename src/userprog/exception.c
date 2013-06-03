@@ -4,6 +4,9 @@
 #include "userprog/gdt.h"
 #include "threads/interrupt.h"
 #include "threads/thread.h"
+#include "vm/page.h"
+#include "vm/frame.h"
+#include "vm/swap.h"
 
 /* Number of page faults that are processed. */
 static long long page_fault_cnt;
@@ -127,6 +130,7 @@ page_fault (struct intr_frame *f)
   bool user;         /* True: access by user, false: access by kernel. */
   void *fault_addr;  /* Fault address. */
 
+
   /* Obtain faulting address, the virtual address that was
      accessed to cause the fault.  It may point to code or to
      data.  It is not necessarily the address of the instruction
@@ -156,6 +160,52 @@ page_fault (struct intr_frame *f)
           not_present ? "not present" : "rights violation",
           write ? "writing" : "reading",
           user ? "user" : "kernel");
-  kill (f);
+
+	if (not_present && user) // pg fault called since page is not found
+	{
+		void *fault_page = pg_round_down(fault_addr);
+		struct thread *t = thread_current();
+		struct page *p = find_page(&t->suppagetable, fault_page);
+		bool swap_success;
+		
+		if (p != NULL) // has supplement page table
+		{
+			if (p->swap_index == -1) // no swap info
+				return;
+			else if (p->valid_page == false) // invalid page
+			{
+				p->valid_page = true;
+				p->paddr = get_frame(PAL_USER); // new frame
+				swap_success = swap_in(p->swap_index, p->paddr);
+				
+				pagedir_clear_page(t->pagedir, fault_page); // pagedir clear
+				pagedir_set_page(t->pagedir, fault_page, p-> paddr, true); // set pg dir
+				
+				p->vaddr = fault_page;
+				set_page_in_frame(p->paddr, p->vaddr);
+				
+				return;
+			}
+			else
+				return;
+		}
+		else if (is_user_vaddr(fault_page)) // stack growth
+		{
+			// just give one more frame
+			uint8_t *frame = get_frame(PAL_USER | PAL_ZERO);
+			if (frame != NULL)
+				if (pagedir_get_page(t->pagedir, fault_page) == NULL) // clear?
+					if (pagedir_set_page(t->pagedir, fault_page, frame, true)) // set success
+					{	
+						*(uint32_t*)f->esp = fault_page; // adjust stack pointer
+						return;
+					}
+
+			free_frame(frame);	
+		}
+	
+	}
+	
+	kill(f);
 }
 
