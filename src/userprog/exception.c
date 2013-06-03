@@ -6,6 +6,7 @@
 #include "threads/thread.h"
 #include "vm/page.h"
 #include "vm/frame.h"
+#include "threads/vaddr.h"
 #include "vm/swap.h"
 
 /* Number of page faults that are processed. */
@@ -151,6 +152,23 @@ page_fault (struct intr_frame *f)
   not_present = (f->error_code & PF_P) == 0;
   write = (f->error_code & PF_W) != 0;
   user = (f->error_code & PF_U) != 0;
+  
+  bool load = false;
+
+  if (not_present&&is_user_vaddr(fault_addr)){
+    struct thread* t = thread_current();
+    void *upage = pg_round_down(fault_addr);
+
+    //swap disk in
+
+    //if swap false, stack growth
+    
+  }
+
+  if (!load)
+    kill (f);
+
+  return;
 
   /* To implement virtual memory delete the rest of the function
      body, and replace it with code that brings in the page to

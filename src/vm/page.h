@@ -2,8 +2,12 @@
 #include "threads/thread.h"
 #include "threads/palloc.h"
 #include <list.h>
+#include <hash.h>
 #include "threads/synch.h"
 
+#define MAX_STACK_SIZE (1 << 23)
+
+#define SWAP 1
 
 struct page{
 	// hash table
@@ -19,6 +23,14 @@ struct page{
 	// location where it swapped
 	// if this page is not swapped, then index is negative, esp. -1
 	int swap_index;
+
+  struct hash_elem elem;
+
+  bool is_loaded;
+  bool pinned;
+  bool writable;
+  void *uva;
+  uint8_t type;
 };
 
 unsigned page_hash(const struct hash_elem *p, void *aux UNUSED);
@@ -28,3 +40,4 @@ void init_sup_page(struct hash *suppagetable);
 void insert_sup_page(struct hash *suppagetable, void *vaddr, void *paddr);
 void remove_sup_page(struct hash *suppagetable);
 void free_page(struct hash_elem *e, void *aux UNUSED);
+bool grow_stack(void *uva);

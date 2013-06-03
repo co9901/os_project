@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include "vm/page.h"
 #include "threads/palloc.h"
 #include "threads/malloc.h"
@@ -5,6 +6,7 @@
 #include "threads/synch.h"
 #include "userprog/pagedir.h"
 #include "threads/vaddr.h"
+#include "vm/frame.h"
 
 // hash key is vaddr
 
@@ -78,4 +80,40 @@ free_page(struct hash_elem *e, void *aux UNUSED)
 {
 	struct page *p = hash_entry(e, struct page, hash_elem);
 	free(p);
+}
+
+bool grow_stack( void *uva) {
+
+  if ( (size_t) (PHYS_BASE - pg_round_down(uva)) > MAX_STACK_SIZE) {
+    return false;
+  }
+  struct page *p = malloc(sizeof(struct page));
+  if (!p) {
+    return false;
+  }
+
+  p->uva = pg_round_down(uva);
+  p->is_loaded = true;
+  p->writable = true;
+  p->type = SWAP;
+  p->pinned = true;
+
+  uint8_t *frame = frame_alloc(PAL_USER, p);
+  if (!frame) {
+    free(p);
+    return false;  
+  }
+  if (!install_page(p->uva,frame,p->writable)){
+
+    free(p);
+    free_frame(frame);
+    return false;
+  }
+  if (intr_context()){
+    p->pinned = false;
+  }
+
+  return (hash_insert(&thread_current() -> suppagetable, &p->elem) == NULL);
+  
+
 }
