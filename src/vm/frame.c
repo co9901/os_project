@@ -52,7 +52,6 @@ get_frame(int flags)
 bool
 free_frame(void *frame)
 {
-	//lock_acquire( &(frame_tb->lock) );
 	lock_acquire(&framelock);
 	
 	struct list_elem *e;
@@ -72,10 +71,28 @@ free_frame(void *frame)
 			return true;
 		}
 	}
-	
 	lock_release(&framelock);
-	//lock_release( &(frame_tb->lock) );
 	return false;
+}
+
+void
+free_frame_table() {
+  lock_acquire(&framelock); 
+  /* struct list_elem *e;*/
+  /* struct frame_entry *fe;*/
+
+  /* for(e=list_begin(&(frame_tb -> frame_list));e!=list_end(&(frame_tb->frame_list));e=list_next(e)){*/
+  /*   fe = list_entry(e, struct frame_entry, elem);*/
+  /*   if(fe!= NULL) {*/
+  /*     fe->frame = NULL;*/
+  /*     fe->page = NULL;*/
+  /*     fe->t = NULL;*/
+  /*     list_remove(&(fe->elem));*/
+  /*     free(fe);*/
+  /*   }*/
+  /* }*/
+  free(frame_tb);
+  lock_release(&framelock);
 }
 
 // set page in frame table corresponded to a kpage
