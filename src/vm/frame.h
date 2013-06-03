@@ -28,13 +28,16 @@ struct frame_entry{
 	disk_sector_t sector_no;
 	uintptr_t frame_addr;
 };
-
-struct frame_table{
-	struct list frame_list;
+struct list frame_table;
+struct pte_elem
+{
+    uint32_t *pte;
+    struct list_elem elem;
 };
 void evict(struct frame_entry *);
 void init_frame_table (void);
 void *get_frame (int palloc_flags);
 bool free_frame (void *frame);
 void set_page_in_frame(void *kpage, void *upage);
+struct list_elem *hand;
 #endif
