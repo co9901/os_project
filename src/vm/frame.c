@@ -100,3 +100,24 @@ set_page_in_frame(void *kpage, void *upage)
 	lock_release(&framelock);
 	//lock_release( &(frame_tb->lock) );
 }
+
+
+void evict(struct frame_entry *victim)
+{
+    if(victim->flags & FRAME_DIRTY)
+    {
+	if(victim->read_bytes == 0)
+	{
+	    int i;
+	    uint8_t *page = ptov(victim->frame);
+	    for(i= PGSIZE-1;i>=0;i--)
+	    {
+		if(page[i]!=0)
+		break;
+	    }
+	    victim->read_bytes = i+1;
+	}
+	victim->flags &= ~FRAME_EXEC;
+    }
+   // swap_out(victim);
+}

@@ -1,12 +1,20 @@
 #include "userprog/syscall.h"
 #include <stdio.h>
+#include "devices/disk.h"
 #include <syscall-nr.h>
 #include "threads/interrupt.h"
+#include "vm/page.h"
+#include "vm/frame.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
+#include "threads/pte.h"
+#include "threads/palloc.h"
+#include "threads/malloc.h"
 #include "threads/init.h"
 #include "threads/synch.h"
-
+#include "userprog/pagedir.h"
+#include "filesys/filesys.h"
+#include "filesys/file.h"
 /* This is a skeleton system call handler */
 
 typedef int pid_t;
@@ -26,7 +34,7 @@ static struct file *find_by_fd (int fd);
 static struct fd_elem *find_fde_by_fd (int fd);
 static int alloc_fid (void);
 static struct fd_elem *find_pro (int fd);
-
+//static mapid_t mmap (int fd,void *addr);
 typedef int (*handler) (uint32_t, uint32_t, uint32_t);
 static handler syscall_vec[128];
 static struct lock file_lock;
@@ -318,3 +326,57 @@ sys_wait (pid_t pid)
 {
 	return process_wait (pid);
 }
+/*
+mapid_t mmap(int fd, void *addr)
+{
+ struct thread *cur = thread_current();
+ struct list *fd_list = &(cur->files);
+ struct list_elem *e;
+ struct fd_elem *file_d = NULL;
+ if(fd==0|| fd==1)
+ { return -1;}
+ if(addr==0)
+ { return -1;}
+ if((uint32_t)addr % PGSIZE){return -1;}
+ for(e = list_begin(fd_list); e!=list_end (fd_list); e = list_next(e))
+ {
+	file_d = list_entry(e, struct fd_elem, elem);
+	if(file_d->fd == fd)
+	{
+		int flen = file_length (file_d->file);
+		if(flen==0){return -1;}
+	
+	uint32_t *pd = cur->pagedir;
+	uint32_t *pte;
+	uint8_t *page;
+	struct file *f = file_d -> file;
+	bool writeable = f->deny_write;
+	void *kpage = ptov(0);
+	disk_sector_t sector_no = byte_to_sector (file_d->file->inode,0);
+	for(page = addr;page<(uint8_t *)addr + flen;page+=PGSIZE,sector_no +=(PGSIZE/DISK_SECTOR_SIZE))
+	{
+	    if(((pte = lookup_page (pd, page, false)) != NULL) && (*pte & PTE_U))
+		return -1;
+	    if(!pagedir_set_page (pd,page,kpage, writeable, (1 | 4) , sector_no, flen))
+		return -1;
+	}
+	inode_reopen (file_d->file->inode);
+	return addr;
+ }
+	
+ }
+ return -1;
+}
+ 
+void munmap (mapid_t mapping)
+{
+   struct thread *cur = thread_current();
+   uint32_t *pd = cur->pagedir;
+   uint8_t *page;
+   int flen = PGSIZE;
+   for (page = mapping; page < (uint8_t *)mapping + flen; page+=PGSIZE)
+   {
+       uint32_t *pte = lookup_page(pd,page,false);
+       struct list_elem *e;
+       struct frame_elem *f;
+*/
