@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include "vm/page.h"
 #include "threads/palloc.h"
 #include "threads/malloc.h"
@@ -5,6 +6,7 @@
 #include "threads/synch.h"
 #include "userprog/pagedir.h"
 #include "threads/vaddr.h"
+#include "vm/frame.h"
 
 // hash key is vaddr
 

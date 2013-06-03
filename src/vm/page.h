@@ -3,8 +3,8 @@
 #include "threads/thread.h"
 #include "threads/palloc.h"
 #include <list.h>
+#include <hash.h>
 #include "threads/synch.h"
-
 
 struct page{
 	// hash table
