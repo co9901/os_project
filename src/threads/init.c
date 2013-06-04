@@ -35,6 +35,9 @@
 #include "filesys/filesys.h"
 #include "filesys/fsutil.h"
 #endif
+#include "vm/swap.h"
+#include "vm/page.h"
+#include "vm/frame.h"
 
 /* Amount of physical memory, in 4 kB pages. */
 size_t ram_pages;
@@ -119,7 +122,12 @@ main (void)
   filesys_init (format_filesys);
 #endif
 
-  printf ("Boot complete.\n");
+	// my implementation ==================================
+	init_frame_table();
+	init_swap_disk();
+	//=========================================
+	
+	printf ("Boot complete.\n");
   
   /* Run actions specified on kernel command line. */
   run_actions (argv);

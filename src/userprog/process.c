@@ -206,7 +206,10 @@ process_wait (tid_t child_tid)
 	ret = t->ret_status;
 	while(t->ret_status == 777777)
 	{
-		if(t->status == THREAD_BLOCKED){thread_unblock(t);}
+		if(t->status == THREAD_BLOCKED)
+		{thread_unblock(t);}
+
+		
 	}
 	
 done:

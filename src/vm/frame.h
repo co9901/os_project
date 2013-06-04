@@ -1,5 +1,4 @@
-#ifndef USERPROG_PROCESS_H
-#define USERPROG_PROCESS_H
+//#define USERPROG_PROCESS_H
 #include "threads/thread.h"
 #include "threads/palloc.h"
 #include <list.h>
@@ -37,4 +36,3 @@ void init_frame_table (void);
 void *get_frame (int palloc_flags);
 bool free_frame (void *frame);
 void set_page_in_frame(void *kpage, void *upage);
-#endif
