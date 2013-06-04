@@ -236,6 +236,9 @@ process_exit (void)
 
 	// my implementation ================
 	remove_sup_page(&cur->suppagetable);
+  free_frame_table();
+  free_swap_disk();
+
 
   /* Destroys the current process's page directory and switch back
      to the kernel-only page directory. */

@@ -58,6 +58,10 @@ swap_in(int index, void *page)
 	return true;
 }
 
+void free_swap_disk() {
+  free(swap_table);
+}
+
 bool
 remove_swap_slot(int idx)
 {
