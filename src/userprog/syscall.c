@@ -153,9 +153,22 @@ sys_halt (void) {
 sys_exec (const char *cmd)
 {
 	int ret;
-	if (!cmd || !is_user_vaddr (cmd))
+	int counter=0;
+	const char *p;
+	for(p=cmd;*p!='\0';p++)
+	{
+	    if(counter>=PGSIZE){printf("Invalid filename to execute\n");lock_release(&file_lock);
 		return -1;
-	lock_acquire ( &file_lock);
+	    }
+	    counter ++;
+	}
+
+if (!cmd || !is_user_vaddr (cmd))
+		return -1;
+	
+		lock_acquire ( &file_lock);
+	
+	
 	ret = process_execute (cmd);
 	lock_release ( &file_lock);
 	return ret;
@@ -324,7 +337,9 @@ sys_exit(int status)
 	static int
 sys_wait (pid_t pid)
 {
-	return process_wait (pid);
+	int ret = process_wait (pid);
+	sys_exit(ret);
+	return ret;
 }
 /*
 mapid_t mmap(int fd, void *addr)

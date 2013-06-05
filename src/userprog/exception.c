@@ -130,7 +130,7 @@ page_fault (struct intr_frame *f)
   bool write;        /* True: access was write, false: access was read. */
   bool user;         /* True: access by user, false: access by kernel. */
   void *fault_addr;  /* Fault address. */
-
+  struct thread *t = thread_current();
 
   /* Obtain faulting address, the virtual address that was
      accessed to cause the fault.  It may point to code or to
@@ -152,23 +152,10 @@ page_fault (struct intr_frame *f)
   not_present = (f->error_code & PF_P) == 0;
   write = (f->error_code & PF_W) != 0;
   user = (f->error_code & PF_U) != 0;
-  
-  bool load = false;
-
-  if (not_present&&is_user_vaddr(fault_addr)){
-    struct thread* t = thread_current();
-    void *upage = pg_round_down(fault_addr);
-
-    //swap disk in
-
-    //if swap false, stack growth
+ 
     
-  }
+  
 
-  if (!load)
-    kill (f);
-
-  return;
 
   /* To implement virtual memory delete the rest of the function
      body, and replace it with code that brings in the page to
@@ -182,7 +169,6 @@ page_fault (struct intr_frame *f)
 	if (not_present && user) // pg fault called since page is not found
 	{
 		void *fault_page = pg_round_down(fault_addr);
-		struct thread *t = thread_current();
 		struct page *p = find_page(&t->suppagetable, fault_page);
 		bool swap_success;
 		

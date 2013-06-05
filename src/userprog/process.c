@@ -194,7 +194,9 @@ process_wait (tid_t child_tid)
 	ret = -1;
 	t = get_thread_by_tid (child_tid);
 	if (!t)
-	{ return ret;}
+	{
+	    //t->ret_status = -1;
+	    return ret;}
 	if (t->status == THREAD_DYING || t->ret_status == RET_INVALID)
 		goto done;
 	if (t->ret_status != RET_DEFAULT && t->ret_status != RET_INVALID)

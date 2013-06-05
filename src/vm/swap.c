@@ -59,7 +59,7 @@ swap_in(int index, void *page)
 }
 
 void free_swap_disk() {
-  free(swap_table);
+  bitmap_destroy(swap_table);
 }
 
 bool

@@ -40,4 +40,3 @@ void *get_frame (int palloc_flags);
 bool free_frame (void *frame);
 void set_page_in_frame(void *kpage, void *upage);
 struct list_elem *hand;
-#endif
